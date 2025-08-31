@@ -1,16 +1,9 @@
-﻿.PHONY: up down logs api fmt
-
+.PHONY: up down migrate ingest
 up:
-\tdocker compose -f infra/compose.yaml up -d --build
-
+	docker compose -f infra/compose.yaml up -d
 down:
-\tdocker compose -f infra/compose.yaml down
-
-logs:
-\tdocker compose -f infra/compose.yaml logs -f
-
-api:
-\tcurl http://localhost:8000/health || powershell -Command "Invoke-WebRequest -UseBasicParsing http://localhost:8000/health"
-
-fmt:
-\t@echo "placeholder for formatters"
+	docker compose -f infra/compose.yaml down -v
+migrate:
+	psql "postgres://bankmatch:bankmatch@localhost:5432/bankmatch" -f db/migrations/0001_init.sql
+ingest:
+	python etl/ingest_csv.py --dsn "postgres://bankmatch:bankmatch@localhost:5432/bankmatch" --csv data/templates/products_template.csv
