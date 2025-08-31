@@ -1,23 +1,12 @@
-﻿services:
+services:
   db:
     image: postgres:16
     environment:
+      POSTGRES_DB: bankmatch
       POSTGRES_USER: bankmatch
       POSTGRES_PASSWORD: bankmatch
-      POSTGRES_DB: bankmatch
-    ports:
-      - "5432:5432"
+    ports: ["5432:5432"]
     volumes:
-      - db_data:/var/lib/postgresql/data
-
-  api:
-    build:
-      context: ../
-      dockerfile: apps/api/Dockerfile
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-
+      - dbdata:/var/lib/postgresql/data
 volumes:
-  db_data:
+  dbdata:
