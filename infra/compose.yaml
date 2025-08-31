@@ -8,5 +8,18 @@ services:
     ports: ["5432:5432"]
     volumes:
       - dbdata:/var/lib/postgresql/data
+      - ../db/migrations:/migrations:ro
+
+  etl:
+    image: python:3.11-slim
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+    environment:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PIP_NO_CACHE_DIR: "1"
+    # Install deps on each run for simplicity; can be optimized with a Dockerfile later.
+    entrypoint: ["bash", "-lc"]
+
 volumes:
   dbdata:

@@ -1,3 +1,4 @@
-psycopg2-binary==2.9.9
+# Compatible pins to avoid platform resolution issues
+psycopg2-binary>=2.9.7,<3
 pandas==2.2.2
-python-dateutil==2.9.0
+python-dateutil==2.9.0.post0
