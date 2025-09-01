@@ -13,3 +13,20 @@ jobs:
         run: docker compose -f infra/compose.yaml exec -T db psql -U bankmatch -d bankmatch -f /migrations/0001_init.sql
       - name: Ingest
         run: docker compose -f infra/compose.yaml run --rm etl bash -lc "pip install -r app/requirements.txt && python etl/ingest_csv.py --dsn postgres://bankmatch:bankmatch@db:5432/bankmatch --csv data/templates/products_template.csv"
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker Compose Up (db)
+        run: docker compose -f infra/compose.yaml up -d db
+      - name: Wait for DB
+        run: sleep 5
+      - name: Migrate
+        run: docker compose -f infra/compose.yaml exec -T db psql -U bankmatch -d bankmatch -f /migrations/0001_init.sql
+      - name: Convert JSON -> CSV
+        run: docker compose -f infra/compose.yaml run --rm etl bash -lc "python etl/convert_json_to_csv.py data/sample_batch.json data/sample_batch.csv"
+      - name: Ingest CSV
+        run: docker compose -f infra/compose.yaml run --rm etl bash -lc "python etl/ingest_csv.py --dsn postgres://bankmatch:bankmatch@db:5432/bankmatch --csv data/sample_batch.csv"
+      - name: Verify counts
+        run: docker compose -f infra/compose.yaml exec -T db psql -U bankmatch -d bankmatch -c "SELECT count(*) AS banks FROM banks; SELECT count(*) AS products FROM products;"
