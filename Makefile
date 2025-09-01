@@ -1,4 +1,4 @@
-.PHONY: check up down logs migrate ingest psql help
+.PHONY: check up down logs migrate ingest psql help convert load verify batch migrate2 match
 
 DC := docker compose -f infra/compose.yaml
 
@@ -38,3 +38,40 @@ psql:
 
 down:
 	$(DC) down -v
+
+# convert JSON -> CSV
+# Usage: make convert IN=data/batch_001.json OUT=data/batch_001.csv
+convert:
+	@if [ -z "$(IN)" ] || [ -z "$(OUT)" ]; then echo "Usage: make convert IN=... OUT=..."; exit 1; fi
+	$(DC) run --rm etl bash -lc "python etl/convert_json_to_csv.py $(IN) $(OUT)"
+
+# load CSV -> Postgres (via Docker)
+# Usage: make load CSV=data/batch_001.csv
+load:
+	@if [ -z "$(CSV)" ]; then echo "Usage: make load CSV=..."; exit 1; fi
+	$(DC) up -d db
+	$(DC) exec -T db psql -U bankmatch -d bankmatch -f /migrations/0001_init.sql
+	$(DC) run --rm etl bash -lc "python etl/ingest_csv.py --dsn postgres://bankmatch:bankmatch@db:5432/bankmatch --csv $(CSV)"
+
+# verify counts after load
+verify:
+	$(DC) exec -T db psql -U bankmatch -d bankmatch -c "SELECT count(*) AS banks FROM banks; SELECT count(*) AS products FROM products;"
+
+# one-click: JSON -> CSV -> ingest -> verify
+# Usage: make batch IN=data/batch_001.json OUT=data/batch_001.csv
+batch:
+	@if [ -z "$(IN)" ] || [ -z "$(OUT)" ]; then echo "Usage: make batch IN=... OUT=..."; exit 1; fi
+	$(MAKE) convert IN=$(IN) OUT=$(OUT)
+	$(MAKE) load CSV=$(OUT)
+	$(MAKE) verify
+
+# Apply matching schema migration
+migrate2:
+	$(DC) exec -T db psql -U bankmatch -d bankmatch -f /migrations/0002_match_schema.sql
+	@echo "✅ Match schema migration applied"
+
+# Example usage with customer-id:
+# make match CID=1
+match:
+	@if [ -z "$(CID)" ]; then echo "Usage: make match CID=<customer_id>"; exit 1; fi
+	$(DC) run --rm etl bash -lc "python etl/match_customer.py --dsn postgres://bankmatch:bankmatch@db:5432/bankmatch --customer-id $(CID) --top 10"

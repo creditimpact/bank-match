@@ -1,0 +1,42 @@
+[
+  {
+    "bank_legal_name": "Sample Bank A",
+    "fdic_certificate": 10001,
+    "website": "https://a.example.com",
+    "lending_footprint": "US",
+    "product_type": "term_loan",
+    "purpose_allowed": "working capital"
+  },
+  {
+    "bank_legal_name": "Sample Bank B",
+    "fdic_certificate": 10002,
+    "website": "https://b.example.com",
+    "lending_footprint": "US",
+    "product_type": "term_loan",
+    "purpose_allowed": "equipment purchase"
+  },
+  {
+    "bank_legal_name": "Sample Bank C",
+    "fdic_certificate": 10003,
+    "website": "https://c.example.com",
+    "lending_footprint": "US",
+    "product_type": "line_of_credit",
+    "purpose_allowed": "inventory"
+  },
+  {
+    "bank_legal_name": "Sample Bank D",
+    "fdic_certificate": 10004,
+    "website": "https://d.example.com",
+    "lending_footprint": "US",
+    "product_type": "line_of_credit",
+    "purpose_allowed": "real estate"
+  },
+  {
+    "bank_legal_name": "Sample Bank E",
+    "fdic_certificate": 10005,
+    "website": "https://e.example.com",
+    "lending_footprint": "US",
+    "product_type": "term_loan",
+    "purpose_allowed": "expansion"
+  }
+]
