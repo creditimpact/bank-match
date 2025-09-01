@@ -15,11 +15,20 @@ def validate_df(df: pd.DataFrame):
     missing = [c for c in REQUIRED_COLS if c not in df.columns]
     if missing:
         raise ValueError(f"Missing columns: {missing}")
-    # coerce dates
+
+    # Required columns already checked; now validate non-empty FDIC & bank name
+    if (df["fdic_certificate"].str.len() == 0).any():
+        raise ValueError("Some rows have empty fdic_certificate after normalization")
+
+    if (df["bank_legal_name"].str.len() == 0).any():
+        raise ValueError("Some rows have empty bank_legal_name after normalization")
+
+    # Coerce/validate dates
     try:
         df["last_verified"] = df["last_verified"].apply(lambda x: isoparse(str(x)).date())
     except Exception as e:
         raise ValueError(f"Invalid last_verified date: {e}")
+
     return df
 
 def upsert_bank(cur, rows):
@@ -42,6 +51,14 @@ def main():
     args = ap.parse_args()
 
     df = pd.read_csv(args.csv).fillna("")
+
+    # --- Normalize IDs as strings ---
+    df["fdic_certificate"] = df["fdic_certificate"].astype(str).str.strip()
+    df["bank_legal_name"] = df["bank_legal_name"].astype(str).str.strip()
+    df["website"] = df.get("website", "").astype(str).str.strip()
+    df["lending_footprint"] = df.get("lending_footprint", "").astype(str).str.strip()
+    # --------------------------------
+
     df = validate_df(df)
 
     conn = psycopg2.connect(args.dsn)
@@ -50,11 +67,12 @@ def main():
 
     # Upsert banks
     bank_rows = df[["fdic_certificate","bank_legal_name","website","lending_footprint"]].drop_duplicates()
+    print(f"Upserting {len(bank_rows)} bank rows…")
     upsert_bank(cur, [(r.fdic_certificate, r.bank_legal_name, r.website, r.lending_footprint) for r in bank_rows.itertuples()])
 
     # Map fdic -> bank_id
     cur.execute("SELECT id, fdic_certificate FROM banks")
-    id_map = {fdic: bid for bid, fdic in cur.fetchall()}
+    id_map = {str(fdic).strip(): bid for (bid, fdic) in cur.fetchall()}
 
     # Insert products
     prod_cols = [
@@ -65,14 +83,17 @@ def main():
         "decision_timeline_prequal_days","decision_timeline_underwriting_days","last_verified"
     ]
     def to_num(v):
+        s = str(v).replace(",", "").strip()
+        if s == "" or s.lower() == "unknown" or s.lower() == "none":
+            return None
         try:
-            return float(v) if str(v).strip() != "" else None
+            return float(s)
         except:
             return None
 
     prod_values = []
     for r in df[prod_cols].itertuples(index=False):
-        fdic = r[0]
+        fdic = str(r[0]).strip()
         bank_id = id_map.get(fdic)
         if not bank_id:
             raise RuntimeError(f"Bank not found for FDIC {fdic}")
@@ -87,6 +108,7 @@ def main():
         ]
         prod_values.append(vals)
 
+    print(f"Inserting {len(prod_values)} product rows…")
     execute_values(cur, """
     INSERT INTO products (
       bank_id, product_type, min_loan_amount_usd, max_loan_amount_usd, rate_structure,
