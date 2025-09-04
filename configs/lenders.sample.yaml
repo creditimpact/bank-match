@@ -1,0 +1,25 @@
+- name: LenderAlpha
+  program: ["SBA_7a", "Term"]
+  loan_amount_min: 50000
+  loan_amount_max: 5000000
+  min_years_in_business: 2
+  min_personal_fico: 660
+  min_revenue_ttm: 300000
+  dscr_min: 1.15
+  industry_blacklist: ["Cannabis", "Adult"]
+  states_allowed: ["ALL"]
+  collateral_types: ["UCC", "RE", "Equipment"]
+  docs_required: ["BankStatements_3m", "TaxReturns_2y"]
+
+- name: EquipFast
+  program: ["Equipment"]
+  loan_amount_min: 20000
+  loan_amount_max: 1000000
+  min_years_in_business: 1
+  min_personal_fico: 620
+  min_revenue_ttm: 200000
+  dscr_min: 1.10
+  industry_blacklist: []
+  states_allowed: ["CA", "NY", "TX", "FL", "GA"]
+  collateral_types: ["Equipment"]
+  docs_required: ["BankStatements_6m"]
