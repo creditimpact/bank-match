@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/lender_credit_box.schema.json",
+  "title": "LenderCreditBox",
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "program": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Supported loan programs"
+    },
+    "loan_amount_min": {"type": "number"},
+    "loan_amount_max": {"type": "number"},
+    "min_years_in_business": {"type": "number"},
+    "min_personal_fico": {"type": "number"},
+    "min_revenue_ttm": {"type": "number"},
+    "dscr_min": {"type": "number"},
+    "collateral_types": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "industry_blacklist": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "states_allowed": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "docs_required": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "required": [
+    "name",
+    "program",
+    "loan_amount_min",
+    "loan_amount_max"
+  ]
+}
